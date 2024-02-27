@@ -2,7 +2,7 @@
 
 __author__ = "SCA TAC First Responders"
 __copyright__ = "Copyright 2023, Cisco Systems Inc."
-__version__ = "1.2.2"
+__version__ = "1.2.3"
 __status__ = "Production"
 
 import netifaces
@@ -16,12 +16,6 @@ from datetime import datetime, timezone
 from os import mkdir, path
 from shutil import copy, copytree, ignore_patterns
 from subprocess import STDOUT, CalledProcessError, TimeoutExpired, check_output, run
-
-try:
-    import requests
-    rqst_avail = True
-except ImportError:
-    rqst_avail = False
 
 parser = ArgumentParser()
 subparsers = parser.add_subparsers(dest="command", required=True)
@@ -144,7 +138,7 @@ def connectivity():
     cmd_to_file(f'{bundledir}/connectivity/firewalld', 'firewall-cmd --list-all-zones')
 
 def ona_settings_and_logs():
-    copytree("/opt/obsrvbl-ona/", f'{bundledir}/ona_settings/', ignore=ignore_patterns('*python-packages*', '*__pycache__*','*.2*','*pna-*.log*','*pdns_*.pcap.gz'), copy_function=copy)
+    copytree("/opt/obsrvbl-ona/", f'{bundledir}/opt/obsrvbl-ona/', ignore=ignore_patterns('*python-packages*', '*__pycache__*','*.2*','*pna-*.log*','*pdns_*.pcap.gz'), copy_function=copy)
     copytree("/var/log", f'{bundledir}/var/log/', ignore=ignore_patterns('*.dat','journal'), copy_function=copy)
     cmd = f"/opt/silk/bin/rwcut --timestamp-format iso --fields sIp,dIp,sPort,dPort,protocol,Bytes,Packets,sTime,eTime /opt/obsrvbl-ona/logs/ipfix/.202* >> {bundledir}/ona_settings/logs/ipfix/clear_silk 2>/dev/null"
     run(cmd,shell=True)
@@ -177,6 +171,7 @@ def main():
     for i, func in enumerate(functions, start=1):
         print(f"Processing {i}/{len(functions)}: {func.__name__:<22}", end="\r")
         func()
+    #For docker based ONAs below doesn't exist... need to source serial file locale and add...
     bundle_name = f"scabundle-ona-{open('/sys/class/dmi/id/product_serial').read().strip().replace(' ','')}.{datetime.now(timezone.utc).strftime('%Y%m%d.%H%M')}"
     if args.command == "upload":
         bundle_name += "_xdrafr.tar.xz"
